@@ -1,27 +1,40 @@
-# Reproduction Guide for DESSP
+# Guide for DESSP
 
-This guide describes the procedures to reproduce the results for the Data-Efficient Stable Structure Prediction (DESSP) framework. The workflow is divided into two main stages: MLIP Training (Distillation and Calibration) and Batch Global Structure Search.
+This guide describes the procedures to reproduce the results for the Data-Efficient Stable Structure Prediction (DESSP) framework. The workflow is divided into two main stages: MLIP Training (including Distillation and Calibration) and Batch Global Structure Search.
 
 ## 1. Model Training
 
-The training process involves a two-stage strategy: distilling knowledge from a universal MLIP (uMLIP) and calibrating the result with DFT-labeled data. We provide a shell script to automate this process.
+The training process involves a multi-stage strategy depending on the desired model performance and comparison needs. We provide several shell scripts to automate these training workflows.
 
 ### Training Execution
 
-To start the training for the Li-intercalated BLG system, execute the provided bash script:
+To start the training, execute the corresponding bash script based on the model type:
 
-```
-# Ensure you are in the project root directory
-bash MACE_DESSP.sh
-```
+- **DESSP Main Pipeline (Distillation + Calibration):**
 
-This script handles:
+  ```
+  bash MACE_DESSP.sh
+  ```
 
-- Data preprocessing and pseudo-label generation using the uMLIP.
-- The distillation stage to capture the overall potential energy surface (PES).
-- The calibration stage against high-fidelity DFT labels to recover structural stability accuracy.
+  This is the core implementation that performs uMLIP-to-task-specific distillation followed by high-fidelity DFT calibration.
 
-Configuration parameters such as learning rate, batch size, and model architecture are managed within the `./configs/MACE_DESSP.yaml` file referenced by the script.
+- **Distilled Model Training:**
+
+  ```
+  bash MACE_ORB_Distilled.sh
+  ```
+
+  This script specifically handles the distillation stage, transferring the potential energy surface (PES) landscape knowledge from the universal MLIP (uMLIP) to the task-specific model.
+
+- **Baseline Model Training (DFT-GO):**
+
+  ```
+  bash MACE_VASPGO.sh
+  ```
+
+  This serves as the baseline for performance comparison, training the MLIP using datasets obtained through standard local structural relaxations (DFT-GO).
+
+Configuration parameters such as learning rate, batch size, and model architecture are managed within the corresponding `.yaml` files in the `./configs/` directory.
 
 ## 2. Global Structure Search
 
@@ -43,10 +56,12 @@ python run_campaign.py
 
 ## 3. Core File Usage Summary
 
-| **File**            | **Purpose**                                          | **Execution Command**         |
-| ------------------- | ---------------------------------------------------- | ----------------------------- |
-| `MACE_DESSP.sh`     | Main training pipeline (Distillation + Calibration)  | `bash MACE_DESSP.sh`          |
-| `run_campaign.py`   | Batch structural search and production runs          | `python run_campaign.py`      |
-| `run_ga.py`         | Individual Genetic Algorithm search engine           | (Called by `run_campaign.py`) |
+| **File**                | **Purpose**                                          | **Execution Command**         |
+| ----------------------- | ---------------------------------------------------- | ----------------------------- |
+| `MACE_DESSP.sh`         | Main DESSP pipeline (Distillation + Calibration)     | `bash MACE_DESSP.sh`          |
+| `MACE_ORB_Distilled.sh` | Distilled model training (uMLIP knowledge transfer)  | `bash MACE_ORB_Distilled.sh`  |
+| `MACE_VASPGO.sh`        | Baseline model training (DFT-GO dataset)             | `bash MACE_VASPGO.sh`         |
+| `run_campaign.py`       | Batch structural search and production runs          | `python run_campaign.py`      |
+| `run_ga.py`             | Individual Genetic Algorithm search engine           | (Called by `run_campaign.py`) |
 
 By following these steps, you can reproduce the structural predictions and thermodynamic analysis reported in our work.
